@@ -1,42 +1,37 @@
-name: Continuous Integration
+name: CI
 
-# 1. Triggers (Disparadores): Cuándo se ejecuta el pipeline
 on:
   push:
-    branches: [ main ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, master ]
 
-# 2. Jobs: Trabajos o máquinas virtuales requeridas
 jobs:
   test:
-    name: Pruebas Unitarias y Cobertura
-    runs-on: ubuntu-latest  # Máquina virtual con Linux Ubuntu
-
+    runs-on: ubuntu-latest
+    
     steps:
-      # Paso A: Clonar el código del repositorio en la máquina virtual
-      - name: Descargar código del repositorio
-        uses: actions/checkout@v4
-
-      # Paso B: Configurar Python 3.11 en el runner
-      - name: Configurar Python 3.11
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      # Paso C: Instalar las dependencias de requirements.txt
-      - name: Instalar dependencias
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      # Paso D: Ejecutar las pruebas unitarias
-      - name: Ejecutar pruebas unitarias con pytest
-        run: |
-          pytest -v
-
-      # Paso E: Validar cobertura mínima del 80%
-      - name: Validar umbral de cobertura (>= 80%)
-        run: |
-          pytest --cov=main --cov-report=term-missing --cov-fail-under=80
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Cache pip packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('src_base/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r src_base/requirements.txt
+    
+    - name: Run tests with coverage
+      run: |
+        cd src_base
+        pytest -v --cov=. --cov-fail-under=85
